@@ -28,6 +28,20 @@ func NewZookeeperResolver(servers []string, sessionTimeout time.Duration) (disco
 	return &zookeeperResolver{conn: conn}, nil
 }
 
+// NewZookeeperResolver create a zookeeper based resolver with auth
+func NewZookeeperResolverWithAuth(servers []string, sessionTimeout time.Duration, user, password string) (discovery.Resolver, error) {
+	conn, _, err := zk.Connect(servers, sessionTimeout)
+	if err != nil {
+		return nil, err
+	}
+	auth := []byte(fmt.Sprintf("%s:%s", user, password))
+	err = conn.AddAuth(utils.Scheme, auth)
+	if err != nil {
+		return nil, err
+	}
+	return &zookeeperResolver{conn: conn}, nil
+}
+
 func (z *zookeeperResolver) Target(ctx context.Context, target *discovery.TargetInfo) string {
 	return target.Host
 

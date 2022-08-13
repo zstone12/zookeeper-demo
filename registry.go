@@ -45,6 +45,22 @@ func NewZookeeperRegistry(servers []string, sessionTimeout time.Duration) (regis
 	return &zookeeperRegistry{conn: conn}, nil
 }
 
+func NewZookeeperRegistryWithAuth(servers []string, sessionTimeout time.Duration, user, password string) (registry.Registry, error) {
+	if user == "" || password == "" {
+		return nil, fmt.Errorf("user or password can't be empty")
+	}
+	conn, _, err := zk.Connect(servers, sessionTimeout)
+	if err != nil {
+		return nil, err
+	}
+	auth := []byte(fmt.Sprintf("%s:%s", user, password))
+	err = conn.AddAuth(utils.Scheme, auth)
+	if err != nil {
+		return nil, err
+	}
+	return &zookeeperRegistry{conn: conn, authOpen: true, user: user, password: password}, nil
+}
+
 //  path format as follows:
 //  /{serviceName}/{ip}:{port}
 func buildPath(info *registry.Info) (string, error) {
